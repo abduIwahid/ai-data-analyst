@@ -47,12 +47,23 @@ st.title("📊 Data Analyst Agent")
 # Sidebar for API keys
 with st.sidebar:
     st.header("API Keys")
-    gemini_key = st.text_input("Enter your Google Gemini API key:", type="password")
-    if gemini_key:
-        st.session_state.gemini_key = gemini_key
-        st.success("API key saved!")
+    # Demo mode: when the app owner has configured a key in Streamlit
+    # Secrets, visitors use the app directly - nobody is asked for a key.
+    _secret_key = ""
+    try:
+        _secret_key = st.secrets.get("GOOGLE_API_KEY", "")
+    except Exception:
+        _secret_key = ""
+    if _secret_key:
+        st.session_state.gemini_key = _secret_key
+        st.success("Demo mode is on - just upload a file and ask your question.")
     else:
-        st.warning("Please enter your Google Gemini API key to proceed.")
+        gemini_key = st.text_input("Enter your Google Gemini API key:", type="password")
+        if gemini_key:
+            st.session_state.gemini_key = gemini_key
+            st.success("API key saved!")
+        else:
+            st.warning("Please enter your Google Gemini API key to proceed.")
 
 # File upload widget
 uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"])
@@ -80,7 +91,7 @@ if uploaded_file is not None and "gemini_key" in st.session_state:
         
         # Initialize the Agent with DuckDB and Pandas tools
         data_analyst_agent = Agent(
-            model=Gemini(id="gemini-2.5-flash", api_key=st.session_state.gemini_key),
+            model=Gemini(id="gemini-3.8-flash", api_key=st.session_state.gemini_key),
             tools=[duckdb_tools, PandasTools()],
             system_message="You are an expert data analyst. Use the 'uploaded_data' table to answer user queries. Generate SQL queries using DuckDB tools to solve the user's query. Provide clear and concise answers with the results.",
             markdown=True,
